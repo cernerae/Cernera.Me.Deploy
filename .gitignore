@@ -1,1 +1,3 @@
 certbot/
+dhparam/*
+dhparam-2048.pem

@@ -28,7 +28,7 @@ services:
       - WORDPRESS_DB_PASSWORD=$MYSQL_PASSWORD
       - WORDPRESS_DB_NAME=wordpress
     volumes:
-      - wordpress:/var/www/html
+      - web-root-wordpress:/usr/share/nginx/wordpress
     networks:
       - app-network
 
@@ -40,28 +40,39 @@ services:
       context: ./nginx/public
       dockerfile: Dockerfile
     container_name: web_server
+    restart: unless-stopped
     volumes:
-      - ./nginx/public/nginx.conf:/etc/nginx/nginx.conf
-      - ./cert/data/certbot/conf:/etc/letsencrypt
-      - ./cert/data/certbot/www:/var/www/certbot
-      - wordpress:/var/www/html
+      - web-root:/usr/share/nginx/cernera_me
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/www/certbot
+      - ./dhparam/dhparam-2048.pem:/etc/ssl/certs/dhparam-2048.pem
     ports:
       - 80:80
       - 443:443
+    depends_on:
+      - db
+      - wordpress
     networks:
       - app-network
     command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
     image: certbot/certbot
+    container_name: certbot
     volumes:
-      - ./cert/data/certbot/conf:/etc/letsencrypt
-      - ./cert/data/certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-
+      - certbot-etc:/etc/letsencrypt
+      - certbot-etc:/var/www/certbot
+      - web-root:/usr/share/nginx/cernera_me
+    depends_on:
+      - nginx
+    command: certonly --webroot --webroot-path=/usr/share/nginx/cernera_me --email cernerae@gmail.com --agree-tos --no-eff-email --force-renewal -d cernera.me
 volumes:
-  wordpress:
+  certbot-etc:
+  certbot-var:
   dbdata:
+  web-root:
+  web-root-wordpress:
 
 networks:
   app-network:
