@@ -1,6 +1,10 @@
+ARG react_app_version
+
+FROM cernerae/cernera_me_react_app:${react_app_version} as react
+
 FROM nginx:1.17.3
 
-COPY --from=cernerae/cernera_me_react_app:dev /usr/src/app/build /usr/share/nginx/cernera_me
+COPY --from=react /usr/src/app/build /usr/share/nginx/cernera_me
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY default.conf /etc/nginx/conf.d
